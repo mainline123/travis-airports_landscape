@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Moon Palace MBJ Arrivals</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    background: #071a2d;
+    color: white;
+    font-family: Arial, "Segoe UI", sans-serif;
+}
+
+.board {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    border: 2px solid #c9a64b;
+    background: rgba(4, 24, 42, 0.97);
+}
+
+table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+thead {
+    height: 5%;
+}
+
+tbody {
+    height: 95%;
+}
+
+th {
+    background: #063956;
+    color: #f3d67a;
+    font-size: clamp(16px, 2vw, 30px);
+    font-weight: 800;
+    text-align: left;
+    padding: 8px;
+    border-bottom: 2px solid #c9a64b;
+    text-transform: uppercase;
+}
+
+td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(201,166,75,.22);
+    font-size: clamp(16px, 2.1vw, 30px);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+tbody tr:nth-child(even) {
+    background: rgba(255,255,255,.025);
+}
+
+/* AIRLINE LOGO + FLIGHT */
+
+.flight-cell {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.airline-logo {
+    width: clamp(38px, 4.5vw, 64px);
+    height: clamp(28px, 3.4vw, 48px);
+    object-fit: contain;
+    flex: 0 0 auto;
+    background: white;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.flight-text {
+    font-weight: 800;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.time {
+    font-weight: 800;
+}
+
+.status {
+    font-weight: 800;
+}
+
+.status-arrived,
+.status-landed,
+.status-on-time {
+    color: #51e38a;
+}
+
+.status-delayed {
+    color: #ffbd45;
+}
+
+.status-cancelled {
+    color: #ff6464;
+}
+
+.status-en-route,
+.status-enroute,
+.status-in-air {
+    color: #56c8ff;
+}
+
+.message {
+    text-align: center;
+    padding: 30px;
+    color: #d6d6d6;
+}
+
+/* COLUMN WIDTHS */
+
+.col-flight { width: 30%; }
+.col-from   { width: 26%; }
+.col-bag    { width: 9%; }
+.col-time   { width: 17%; }
+.col-status { width: 18%; }
+
+</style>
+</head>
+
+<body>
+
+<div class="board">
+
+<table>
+
+<thead>
+<tr>
+    <th class="col-flight">Airline / Flight</th>
+    <th class="col-from">From</th>
+    <th class="col-bag">Bag</th>
+    <th class="col-time">Time</th>
+    <th class="col-status">Status</th>
+</tr>
+</thead>
+
+<tbody id="flight-body">
+<tr>
+    <td colspan="5" class="message">
+        Loading MBJ arrivals...
+    </td>
+</tr>
+</tbody>
+
+</table>
+
+</div>
+
+<script>
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function statusClass(status) {
+    return "status-" +
+        String(status || "")
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "-");
+}
+
+/* AIRLINE CODE → LOGO */
+
+const airlineLogos = {
+    "AA": "AAL",
+    "AC": "ACA",
+    "B6": "JBU",
+    "CM": "CMP",
+    "DL": "DAL",
+    "UA": "UAL",
+    "WN": "SWA",
+    "WS": "WJA",
+    "VS": "VIR",
+    "OR": "TFL",
+    "P5": "RPB"
+};
+
+function getAirlineCode(value) {
+
+    const text = String(value || "").toUpperCase();
+
+    const match =
+        text.match(/\b([A-Z0-9]{2})\s*\d{1,4}\b/);
+
+    return match ? match[1] : "";
+}
+
+function getLogo(value) {
+
+    const code = getAirlineCode(value);
+    const icao = airlineLogos[code];
+
+    if (!icao) return "";
+
+    return "https://raw.githubusercontent.com/imgmongelli/airlines-logos-dataset/master/images/" +
+           icao +
+           ".png";
+}
+
+async function loadFlights() {
+
+    const body =
+        document.getElementById("flight-body");
+
+    try {
+
+        const response =
+            await fetch(
+                "flights.json?t=" + Date.now(),
+                { cache: "no-store" }
+            );
+
+        if (!response.ok) {
+            throw new Error("Unable to load flights.json");
+        }
+
+        const data = await response.json();
+
+        /* KEEP CAPACITY FOR UP TO 30 FLIGHTS */
+
+        const flights =
+            (data.flights || []).slice(0, 30);
+
+        body.innerHTML = "";
+
+        if (!flights.length) {
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="5" class="message">
+                        No arrival information available.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        flights.forEach(f => {
+
+            const row =
+                document.createElement("tr");
+
+            const displayTime =
+                f.actualTime ||
+                f.scheduledTime ||
+                "—";
+
+            const displayStatus =
+                f.status || "Scheduled";
+
+            const logo =
+                getLogo(f.airlineFlight);
+
+            const logoHtml =
+                logo
+                ? `<img
+                     class="airline-logo"
+                     src="${logo}"
+                     alt=""
+                     onerror="this.style.display='none'"
+                   >`
+                : "";
+
+            row.innerHTML = `
+
+                <td>
+                    <div class="flight-cell">
+
+                        ${logoHtml}
+
+                        <span class="flight-text">
+                            ${escapeHtml(f.airlineFlight || "—")}
+                        </span>
+
+                    </div>
+                </td>
+
+                <td>
+                    ${escapeHtml(f.from || "—")}
+                </td>
+
+                <td>
+                    ${escapeHtml(f.baggage || "—")}
+                </td>
+
+                <td class="time">
+                    ${escapeHtml(displayTime)}
+                </td>
+
+                <td class="status ${statusClass(displayStatus)}">
+                    ${escapeHtml(displayStatus)}
+                </td>
+            `;
+
+            body.appendChild(row);
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="5" class="message">
+                    Flight information temporarily unavailable.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+loadFlights();
+
+/* REFRESH LIVE DISPLAY EVERY 60 SECONDS */
+
+setInterval(loadFlights, 60000);
+
+</script>
+
+</body>
+</html>

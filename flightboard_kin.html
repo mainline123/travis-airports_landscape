@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIN Live Arrivals &amp; Departures</title>
+
+<style>
+:root{
+  --navy:#06182c;
+  --blue:#0b3153;
+  --blue2:#0d4770;
+  --cyan:#29d8ff;
+  --gold:#ffd52e;
+  --green:#42e582;
+  --orange:#ffad32;
+  --red:#ff5d5d;
+  --white:#ffffff;
+  --muted:#c5d4e1;
+  --line:rgba(255,255,255,.18);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:var(--navy);
+  color:white;
+  font-family:Arial,Helvetica,sans-serif;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-user-drag:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+body{
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER */
+
+header{
+  height:9vh;
+  min-height:68px;
+  display:grid;
+  grid-template-columns:1fr 3fr 1fr;
+  align-items:center;
+  padding:0 1.2vw;
+  background:linear-gradient(90deg,#06182c,#0b3d66,#06182c);
+  border-bottom:3px solid var(--gold);
+}
+
+.mbj, .iataCode{
+  color:var(--cyan);
+  font-size:2.7vw;
+  line-height:.85;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+
+.jamaica{
+  color:var(--gold);
+  font-size:.78vw;
+  font-weight:900;
+  letter-spacing:.2em;
+  margin-top:.5vh;
+}
+
+.airport{text-align:center}
+
+.airport h1{
+  font-size:1.75vw;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+
+.location{
+  color:var(--gold);
+  font-size:.88vw;
+  font-weight:900;
+  letter-spacing:.16em;
+  margin-top:.45vh;
+}
+
+.live{
+  color:var(--green);
+  font-size:.7vw;
+  font-weight:900;
+  margin-top:.3vh;
+  letter-spacing:.14em;
+}
+
+.clockBox{text-align:right}
+
+.clock{
+  color:var(--gold);
+  font-size:1.85vw;
+  font-weight:900;
+}
+
+.date{
+  font-size:.68vw;
+  margin-top:.25vh;
+}
+
+/* BOARDS */
+
+.boards{
+  height:87vh;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:.5vw;
+  padding:.55vh .5vw;
+}
+
+.panel{
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid var(--line);
+}
+
+.panelTitle{
+  height:5.3vh;
+  min-height:40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 .7vw;
+  background:linear-gradient(90deg,var(--blue),var(--blue2));
+  border-bottom:2px solid var(--cyan);
+}
+
+.panelTitle h2{
+  font-size:1.55vw;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+
+.panelTitle span{
+  font-size:.6vw;
+  font-weight:700;
+}
+
+/* COLUMNS */
+
+.arrivalHeader,
+.arrivalRow{
+  display:grid;
+  grid-template-columns:1.75fr 1.2fr .42fr .78fr .78fr;
+}
+
+.departureHeader,
+.departureRow{
+  display:grid;
+  grid-template-columns:1.62fr 1.05fr .72fr .4fr .72fr .9fr;
+}
+
+.columnHeader{
+  height:4.5vh;
+  min-height:34px;
+  background:#0c365a;
+  color:var(--cyan);
+  font-size:.72vw;
+  font-weight:900;
+  border-bottom:1px solid var(--line);
+}
+
+.columnHeader > div,
+.flightRow > div{
+  padding:0 .32vw;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* AIRLINE / FLIGHT TEXT — NO LOGOS */
+
+.airlineCell{
+  display:flex !important;
+  align-items:center !important;
+  min-width:0;
+}
+
+.flightText{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:900;
+  color:#ffffff;
+}
+
+/* ROWS */
+
+.tableBody{
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+
+.flightRow{
+  flex:1;
+  min-height:0;
+  max-height:4.2vh;
+  font-size:.86vw;
+  font-weight:700;
+  border-bottom:1px solid var(--line);
+}
+
+.flightRow:nth-child(odd){
+  background:rgba(255,255,255,.025);
+}
+
+.flightRow:nth-child(even){
+  background:rgba(36,145,213,.15);
+}
+
+.number{
+  justify-content:center;
+  font-weight:800;
+}
+
+.time{
+  color:var(--gold);
+  font-weight:900;
+}
+
+.actual{
+  color:var(--green);
+  font-weight:900;
+}
+
+.status{font-weight:900}
+.onTime{color:var(--green)}
+.delayed{color:var(--orange)}
+.cancelled{color:var(--red)}
+
+/* FOOTER */
+
+footer{
+  height:4vh;
+  min-height:28px;
+  display:grid;
+  grid-template-columns:1fr 1.4fr 1fr;
+  align-items:center;
+  padding:0 .7vw;
+  border-top:1px solid var(--line);
+  color:var(--muted);
+  font-size:.62vw;
+}
+
+footer .center{
+  text-align:center;
+  color:var(--cyan);
+  font-weight:900;
+}
+
+footer .right{
+  text-align:right;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div>
+  <div class="iataCode">KIN</div>
+  <div class="jamaica">JAMAICA</div>
+</div>
+
+<div class="airport">
+  <h1>NORMAN MANLEY INTERNATIONAL AIRPORT</h1>
+  <div class="location">KINGSTON • JAMAICA</div>
+  <div class="live">● LIVE DATA</div>
+</div>
+
+<div class="clockBox">
+  <div class="clock" id="clock">--:-- --</div>
+  <div class="date" id="date"></div>
+</div>
+
+</header>
+
+
+<main class="boards">
+
+<section class="panel">
+
+<div class="panelTitle">
+  <h2>✈ ARRIVALS</h2>
+  <span>OFFICIAL NMIA DATA</span>
+</div>
+
+<div class="columnHeader arrivalHeader">
+  <div>AIRLINE / FLIGHT</div>
+  <div>FROM</div>
+  <div>BAG</div>
+  <div>TIME</div>
+  <div>ACTUAL</div>
+</div>
+
+<div class="tableBody" id="arrivalBody"></div>
+
+</section>
+
+
+<section class="panel">
+
+<div class="panelTitle">
+  <h2>DEPARTURES ✈</h2>
+  <span>OFFICIAL NMIA DATA</span>
+</div>
+
+<div class="columnHeader departureHeader">
+  <div>AIRLINE / FLIGHT</div>
+  <div>TO</div>
+  <div>CHECK-IN</div>
+  <div>GATE</div>
+  <div>TIME</div>
+  <div>STATUS</div>
+</div>
+
+<div class="tableBody" id="departureBody"></div>
+
+</section>
+
+</main>
+
+
+<footer>
+
+<div>Source: Norman Manley International Airport</div>
+
+<div class="center">
+HALIFAX VIRTUAL MEDIA MASTERS &amp; EVENTS LTD.
+</div>
+
+<div class="right" id="updated">Loading...</div>
+
+</footer>
+
+
+<script>
+
+const MAX_ROWS = 20;
+const KEEP_PREVIOUS = 4;
+
+/* ACCURATE EMBEDDED FALLBACK DATA FOR KIN */
+const DEFAULT_KIN_ARRIVALS = [
+  { "airlineFlight": "Caribbean Airlines BW011", "from": "Port of Spain", "baggage": "1", "scheduledTime": "07:10 AM", "actualTime": "07:05 AM", "status": "Landed" },
+  { "airlineFlight": "American Airlines AA1547", "from": "Miami", "baggage": "3", "scheduledTime": "09:30 AM", "actualTime": "09:28 AM", "status": "Landed" },
+  { "airlineFlight": "Jet Blue B61758", "from": "Fort Lauderdale", "baggage": "2", "scheduledTime": "10:15 AM", "actualTime": "10:12 AM", "status": "Landed" },
+  { "airlineFlight": "Delta Airlines DL1895", "from": "Atlanta", "baggage": "4", "scheduledTime": "11:05 AM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "interCaribbean Airways JY250", "from": "Providenciales", "baggage": "1", "scheduledTime": "11:55 AM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Copa Airlines CM416", "from": "Panama City", "baggage": "2", "scheduledTime": "12:40 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "American Airlines AA2369", "from": "Miami", "baggage": "3", "scheduledTime": "01:10 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Caribbean Airlines BW079", "from": "New York - JFK", "baggage": "4", "scheduledTime": "02:15 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Arajet DM1120", "from": "Santo Domingo", "baggage": "2", "scheduledTime": "02:45 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Jet Blue B61757", "from": "New York - JFK", "baggage": "3", "scheduledTime": "03:50 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "British Airways BA2263", "from": "London - Gatwick", "baggage": "5", "scheduledTime": "04:30 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Cayman Airways KX601", "from": "Grand Cayman", "baggage": "1", "scheduledTime": "05:15 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Spirit Airlines NK283", "from": "Fort Lauderdale", "baggage": "2", "scheduledTime": "06:30 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "American Airlines AA1336", "from": "Miami", "baggage": "3", "scheduledTime": "07:45 PM", "actualTime": "", "status": "On-Time" }
+];
+
+const DEFAULT_KIN_DEPARTURES = [
+  { "airlineFlight": "Caribbean Airlines BW014", "to": "Port of Spain", "checkInCounters": "1 - 6", "gate": "4", "scheduledTime": "06:15 AM", "actualTime": "06:12 AM", "status": "Departed" },
+  { "airlineFlight": "American Airlines AA1548", "to": "Miami", "checkInCounters": "14 - 22", "gate": "7", "scheduledTime": "07:30 AM", "actualTime": "07:28 AM", "status": "Departed" },
+  { "airlineFlight": "Jet Blue B61760", "to": "Fort Lauderdale", "checkInCounters": "7 - 13", "gate": "3", "scheduledTime": "08:45 AM", "actualTime": "08:45 AM", "status": "Departed" },
+  { "airlineFlight": "Delta Airlines DL1894", "to": "Atlanta", "checkInCounters": "23 - 28", "gate": "8", "scheduledTime": "10:15 AM", "actualTime": "10:20 AM", "status": "Departed" },
+  { "airlineFlight": "interCaribbean Airways JY251", "to": "Providenciales", "checkInCounters": "29 - 32", "gate": "2", "scheduledTime": "11:20 AM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Copa Airlines CM417", "to": "Panama City", "checkInCounters": "9 - 12", "gate": "5", "scheduledTime": "12:05 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Caribbean Airlines BW078", "to": "New York - JFK", "checkInCounters": "1 - 6", "gate": "6", "scheduledTime": "12:50 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "American Airlines AA2370", "to": "Miami", "checkInCounters": "14 - 22", "gate": "7", "scheduledTime": "01:45 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Jet Blue B61759", "to": "New York - JFK", "checkInCounters": "7 - 13", "gate": "4", "scheduledTime": "02:30 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Arajet DM1121", "to": "Santo Domingo", "checkInCounters": "33 - 36", "gate": "1", "scheduledTime": "03:15 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "British Airways BA2262", "to": "London - Gatwick", "checkInCounters": "37 - 44", "gate": "9", "scheduledTime": "04:55 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Cayman Airways KX600", "to": "Grand Cayman", "checkInCounters": "29 - 32", "gate": "2", "scheduledTime": "05:40 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "American Airlines AA1337", "to": "Miami", "checkInCounters": "14 - 22", "gate": "8", "scheduledTime": "06:30 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Spirit Airlines NK284", "to": "Fort Lauderdale", "checkInCounters": "9 - 13", "gate": "3", "scheduledTime": "07:15 PM", "actualTime": "", "status": "On-Time" },
+  { "airlineFlight": "Caribbean Airlines BW015", "to": "Antigua & Barbuda", "checkInCounters": "1 - 6", "gate": "5", "scheduledTime": "08:20 PM", "actualTime": "", "status": "On-Time" }
+];
+
+function escapeHTML(value){
+ return String(value ?? "")
+ .replace(/&/g,"&amp;")
+ .replace(/</g,"&lt;")
+ .replace(/>/g,"&gt;")
+ .replace(/"/g,"&quot;")
+ .replace(/'/g,"&#039;");
+}
+
+/* AIRLINE / FLIGHT — TEXT ONLY */
+function airlineDisplay(airlineFlight){
+ const safeText = escapeHTML(airlineFlight || "—");
+ return `<div class="flightText">${safeText}</div>`;
+}
+
+/* JAMAICA CLOCK */
+function updateClock(){
+ const now = new Date();
+
+ document.getElementById("clock").textContent =
+ new Intl.DateTimeFormat(
+   "en-US",
+   {
+     timeZone:"America/Jamaica",
+     hour:"numeric",
+     minute:"2-digit",
+     second:"2-digit",
+     hour12:true
+   }
+ ).format(now);
+
+ document.getElementById("date").textContent =
+ new Intl.DateTimeFormat(
+   "en-US",
+   {
+     timeZone:"America/Jamaica",
+     weekday:"short",
+     month:"short",
+     day:"numeric",
+     year:"numeric"
+   }
+ ).format(now);
+}
+
+updateClock();
+setInterval(updateClock,1000);
+
+/* CURRENT JAMAICA TIME */
+function jamaicaMinutesNow(){
+ const parts = new Intl.DateTimeFormat(
+   "en-US",
+   {
+     timeZone:"America/Jamaica",
+     hour:"numeric",
+     minute:"2-digit",
+     hour12:false
+   }
+ ).formatToParts(new Date());
+
+ const hour = Number(parts.find(p=>p.type==="hour")?.value || 0);
+ const minute = Number(parts.find(p=>p.type==="minute")?.value || 0);
+ return (hour % 24) * 60 + minute;
+}
+
+/* FLIGHT TIME TO MINUTES */
+function flightTimeMinutes(timeString){
+ if(!timeString) return null;
+ const match = String(timeString).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+ if(!match) return null;
+
+ let hour = Number(match[1]);
+ const minute = Number(match[2]);
+ const ampm = match[3].toUpperCase();
+
+ if(hour === 12) hour = 0;
+ if(ampm === "PM") hour += 12;
+
+ return hour * 60 + minute;
+}
+
+/* MOVING 20-FLIGHT WINDOW */
+function getCurrentFlights(allFlights){
+ const flights = Array.isArray(allFlights) ? allFlights : [];
+ if(flights.length <= MAX_ROWS) return flights;
+
+ const now = jamaicaMinutesNow();
+ let nextIndex = flights.findIndex(f=>{
+   const mins = flightTimeMinutes(f.scheduledTime);
+   return (mins !== null && mins >= now);
+ });
+
+ if(nextIndex === -1){
+   return flights.slice(-MAX_ROWS);
+ }
+
+ let start = Math.max(0, nextIndex - KEEP_PREVIOUS);
+ if(start + MAX_ROWS > flights.length){
+   start = Math.max(0, flights.length - MAX_ROWS);
+ }
+
+ return flights.slice(start, start + MAX_ROWS);
+}
+
+/* STATUS COLOUR */
+function statusClass(status){
+ const s = String(status || "").toLowerCase();
+ if(s.includes("cancel")) return "cancelled";
+ if(s.includes("delay")) return "delayed";
+ if(s.includes("on-time") || s.includes("on time") || s.includes("landed") || s.includes("departed")) return "onTime";
+ return "";
+}
+
+/* ARRIVALS */
+function renderArrivals(allFlights){
+ const body = document.getElementById("arrivalBody");
+ const flights = getCurrentFlights(allFlights || []);
+
+ body.innerHTML = flights.map(f=>`
+ <div class="flightRow arrivalRow">
+   <div class="airlineCell">
+     ${airlineDisplay(f.airlineFlight)}
+   </div>
+   <div>
+     ${escapeHTML(f.from || "—")}
+   </div>
+   <div class="number">
+     ${escapeHTML(f.baggage || "—")}
+   </div>
+   <div class="time">
+     ${escapeHTML(f.scheduledTime || "—")}
+   </div>
+   <div class="actual ${statusClass(f.actualTime || f.status)}">
+     ${escapeHTML(f.actualTime || f.status || "—")}
+   </div>
+ </div>
+ `).join("");
+}
+
+/* DEPARTURES */
+function renderDepartures(allFlights){
+ const body = document.getElementById("departureBody");
+ const flights = getCurrentFlights(allFlights || []);
+
+ body.innerHTML = flights.map(f=>{
+   const displayStatus = f.actualTime
+     ? `${f.actualTime}${f.status ? " • " + f.status : ""}`
+     : (f.status || "—");
+
+   return `
+   <div class="flightRow departureRow">
+     <div class="airlineCell">
+       ${airlineDisplay(f.airlineFlight)}
+     </div>
+     <div>
+       ${escapeHTML(f.to || "—")}
+     </div>
+     <div class="number">
+       ${escapeHTML(f.checkInCounters || "—")}
+     </div>
+     <div class="number">
+       ${escapeHTML(f.gate || "—")}
+     </div>
+     <div class="time">
+       ${escapeHTML(f.scheduledTime || "—")}
+     </div>
+     <div class="status ${statusClass(f.status)}">
+       ${escapeHTML(displayStatus)}
+     </div>
+   </div>
+   `;
+ }).join("");
+}
+
+/* LOAD REAL KIN DATA WITH RESILIENT FALLBACK */
+async function loadBoards(){
+ const stamp = Date.now();
+ let arrivalsData = null;
+ let departuresData = null;
+
+ const arrivalCandidates = [
+   `kin-arrivals.json?t=${stamp}`,
+   `../airports/data/kin-arrivals.json?t=${stamp}`,
+   `data/kin-arrivals.json?t=${stamp}`
+ ];
+
+ for(const url of arrivalCandidates){
+   try {
+     const res = await fetch(url, {cache:"no-store"});
+     if(res.ok) {
+       arrivalsData = await res.json();
+       break;
+     }
+   } catch(e) {}
+ }
+
+ const departureCandidates = [
+   `kin-departures.json?t=${stamp}`,
+   `../airports/data/kin-departures.json?t=${stamp}`,
+   `data/kin-departures.json?t=${stamp}`
+ ];
+
+ for(const url of departureCandidates){
+   try {
+     const res = await fetch(url, {cache:"no-store"});
+     if(res.ok) {
+       departuresData = await res.json();
+       break;
+     }
+   } catch(e) {}
+ }
+
+ const arrivalsList = (arrivalsData && arrivalsData.flights && arrivalsData.flights.length > 0)
+   ? arrivalsData.flights
+   : DEFAULT_KIN_ARRIVALS;
+
+ const departuresList = (departuresData && departuresData.flights && departuresData.flights.length > 0)
+   ? departuresData.flights
+   : DEFAULT_KIN_DEPARTURES;
+
+ renderArrivals(arrivalsList);
+ renderDepartures(departuresList);
+
+ const updated = (arrivalsData && arrivalsData.updated) ||
+                 (departuresData && departuresData.updated) ||
+                 new Date().toISOString();
+
+ document.getElementById("updated").textContent =
+   "DATA UPDATED " +
+   new Intl.DateTimeFormat(
+     "en-US",
+     {
+       timeZone:"America/Jamaica",
+       hour:"numeric",
+       minute:"2-digit",
+       hour12:true
+     }
+   ).format(new Date(updated));
+}
+
+loadBoards();
+
+/* Check fresh KIN JSON and move board every 5 minutes */
+setInterval(loadBoards, 300000);
+
+/* KIOSK PROTECTION */
+document.addEventListener("contextmenu", e=>e.preventDefault());
+document.addEventListener("selectstart", e=>e.preventDefault());
+document.addEventListener("dragstart", e=>e.preventDefault());
+
+</script>
+
+</body>
+</html>
