@@ -1,0 +1,39 @@
+name: Update POT Flights
+
+on:
+  schedule:
+    - cron: "25 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-pot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Update POT flight data
+        run: node update-pot.js
+
+      - name: Commit updated POT data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add pot-arrivals.json pot-departures.json
+
+          if git diff --cached --quiet; then
+            echo "No POT flight changes to commit"
+          else
+            git commit -m "Automatic POT flight update"
+            git push
+          fi
