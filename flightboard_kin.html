@@ -20,7 +20,11 @@
   --line:rgba(255,255,255,.18);
 }
 
-*{box-sizing:border-box;margin:0;padding:0}
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
 
 html,body{
   width:100%;
@@ -54,7 +58,7 @@ header{
   border-bottom:3px solid var(--gold);
 }
 
-.mbj, .iataCode{
+.mbj,.iataCode{
   color:var(--cyan);
   font-size:2.7vw;
   line-height:.85;
@@ -70,7 +74,9 @@ header{
   margin-top:.5vh;
 }
 
-.airport{text-align:center}
+.airport{
+  text-align:center;
+}
 
 .airport h1{
   font-size:1.75vw;
@@ -95,7 +101,9 @@ header{
   letter-spacing:.14em;
 }
 
-.clockBox{text-align:right}
+.clockBox{
+  text-align:right;
+}
 
 .clock{
   color:var(--gold);
@@ -182,7 +190,7 @@ header{
   white-space:nowrap;
 }
 
-/* AIRLINE / FLIGHT TEXT — NO LOGOS */
+/* AIRLINE / FLIGHT */
 
 .airlineCell{
   display:flex !important;
@@ -212,7 +220,7 @@ header{
 .flightRow{
   flex:1;
   min-height:0;
-  max-height:4.2vh;
+  max-height:4.0vh;
   font-size:.86vw;
   font-weight:700;
   border-bottom:1px solid var(--line);
@@ -241,10 +249,21 @@ header{
   font-weight:900;
 }
 
-.status{font-weight:900}
-.onTime{color:var(--green)}
-.delayed{color:var(--orange)}
-.cancelled{color:var(--red)}
+.status{
+  font-weight:900;
+}
+
+.onTime{
+  color:var(--green);
+}
+
+.delayed{
+  color:var(--orange);
+}
+
+.cancelled{
+  color:var(--red);
+}
 
 /* FOOTER */
 
@@ -269,6 +288,13 @@ footer .center{
 footer .right{
   text-align:right;
   color:white;
+}
+
+.message{
+  padding:30px;
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
 }
 </style>
 </head>
@@ -343,7 +369,7 @@ footer .right{
 
 <footer>
 
-<div>Source: Norman Manley International Airport</div>
+<div>Source: FlightStats</div>
 
 <div class="center">
 HALIFAX VIRTUAL MEDIA MASTERS &amp; EVENTS LTD.
@@ -356,293 +382,583 @@ HALIFAX VIRTUAL MEDIA MASTERS &amp; EVENTS LTD.
 
 <script>
 
-const MAX_ROWS = 20;
-const KEEP_PREVIOUS = 4;
+/*
+ * Maximum number of flights displayed.
+ * The current KIN feed contains fewer than 30,
+ * so all available flights will be displayed.
+ */
+const MAX_ROWS = 30;
 
-/* ACCURATE EMBEDDED FALLBACK DATA FOR KIN */
-const DEFAULT_KIN_ARRIVALS = [
-  { "airlineFlight": "Caribbean Airlines BW011", "from": "Port of Spain", "baggage": "1", "scheduledTime": "07:10 AM", "actualTime": "07:05 AM", "status": "Landed" },
-  { "airlineFlight": "American Airlines AA1547", "from": "Miami", "baggage": "3", "scheduledTime": "09:30 AM", "actualTime": "09:28 AM", "status": "Landed" },
-  { "airlineFlight": "Jet Blue B61758", "from": "Fort Lauderdale", "baggage": "2", "scheduledTime": "10:15 AM", "actualTime": "10:12 AM", "status": "Landed" },
-  { "airlineFlight": "Delta Airlines DL1895", "from": "Atlanta", "baggage": "4", "scheduledTime": "11:05 AM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "interCaribbean Airways JY250", "from": "Providenciales", "baggage": "1", "scheduledTime": "11:55 AM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Copa Airlines CM416", "from": "Panama City", "baggage": "2", "scheduledTime": "12:40 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "American Airlines AA2369", "from": "Miami", "baggage": "3", "scheduledTime": "01:10 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Caribbean Airlines BW079", "from": "New York - JFK", "baggage": "4", "scheduledTime": "02:15 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Arajet DM1120", "from": "Santo Domingo", "baggage": "2", "scheduledTime": "02:45 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Jet Blue B61757", "from": "New York - JFK", "baggage": "3", "scheduledTime": "03:50 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "British Airways BA2263", "from": "London - Gatwick", "baggage": "5", "scheduledTime": "04:30 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Cayman Airways KX601", "from": "Grand Cayman", "baggage": "1", "scheduledTime": "05:15 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Spirit Airlines NK283", "from": "Fort Lauderdale", "baggage": "2", "scheduledTime": "06:30 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "American Airlines AA1336", "from": "Miami", "baggage": "3", "scheduledTime": "07:45 PM", "actualTime": "", "status": "On-Time" }
-];
 
-const DEFAULT_KIN_DEPARTURES = [
-  { "airlineFlight": "Caribbean Airlines BW014", "to": "Port of Spain", "checkInCounters": "1 - 6", "gate": "4", "scheduledTime": "06:15 AM", "actualTime": "06:12 AM", "status": "Departed" },
-  { "airlineFlight": "American Airlines AA1548", "to": "Miami", "checkInCounters": "14 - 22", "gate": "7", "scheduledTime": "07:30 AM", "actualTime": "07:28 AM", "status": "Departed" },
-  { "airlineFlight": "Jet Blue B61760", "to": "Fort Lauderdale", "checkInCounters": "7 - 13", "gate": "3", "scheduledTime": "08:45 AM", "actualTime": "08:45 AM", "status": "Departed" },
-  { "airlineFlight": "Delta Airlines DL1894", "to": "Atlanta", "checkInCounters": "23 - 28", "gate": "8", "scheduledTime": "10:15 AM", "actualTime": "10:20 AM", "status": "Departed" },
-  { "airlineFlight": "interCaribbean Airways JY251", "to": "Providenciales", "checkInCounters": "29 - 32", "gate": "2", "scheduledTime": "11:20 AM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Copa Airlines CM417", "to": "Panama City", "checkInCounters": "9 - 12", "gate": "5", "scheduledTime": "12:05 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Caribbean Airlines BW078", "to": "New York - JFK", "checkInCounters": "1 - 6", "gate": "6", "scheduledTime": "12:50 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "American Airlines AA2370", "to": "Miami", "checkInCounters": "14 - 22", "gate": "7", "scheduledTime": "01:45 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Jet Blue B61759", "to": "New York - JFK", "checkInCounters": "7 - 13", "gate": "4", "scheduledTime": "02:30 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Arajet DM1121", "to": "Santo Domingo", "checkInCounters": "33 - 36", "gate": "1", "scheduledTime": "03:15 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "British Airways BA2262", "to": "London - Gatwick", "checkInCounters": "37 - 44", "gate": "9", "scheduledTime": "04:55 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Cayman Airways KX600", "to": "Grand Cayman", "checkInCounters": "29 - 32", "gate": "2", "scheduledTime": "05:40 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "American Airlines AA1337", "to": "Miami", "checkInCounters": "14 - 22", "gate": "8", "scheduledTime": "06:30 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Spirit Airlines NK284", "to": "Fort Lauderdale", "checkInCounters": "9 - 13", "gate": "3", "scheduledTime": "07:15 PM", "actualTime": "", "status": "On-Time" },
-  { "airlineFlight": "Caribbean Airlines BW015", "to": "Antigua & Barbuda", "checkInCounters": "1 - 6", "gate": "5", "scheduledTime": "08:20 PM", "actualTime": "", "status": "On-Time" }
-];
+/*
+ * LIVE KIN DATA
+ *
+ * These are the working KIN JSON files
+ * produced by the GitHub Actions updater.
+ */
+const ARRIVALS_URL =
+  "https://mainline123.github.io/MBJ-Arrivals-/kin-arrivals.json";
+
+const DEPARTURES_URL =
+  "https://mainline123.github.io/MBJ-Arrivals-/kin-departures.json";
+
+
+/* HTML SAFETY */
 
 function escapeHTML(value){
- return String(value ?? "")
- .replace(/&/g,"&amp;")
- .replace(/</g,"&lt;")
- .replace(/>/g,"&gt;")
- .replace(/"/g,"&quot;")
- .replace(/'/g,"&#039;");
+
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
 }
 
-/* AIRLINE / FLIGHT — TEXT ONLY */
+
+/* AIRLINE / FLIGHT DISPLAY */
+
 function airlineDisplay(airlineFlight){
- const safeText = escapeHTML(airlineFlight || "—");
- return `<div class="flightText">${safeText}</div>`;
+
+  const safeText =
+    escapeHTML(airlineFlight || "—");
+
+  return `
+    <div class="flightText">
+      ${safeText}
+    </div>
+  `;
+
 }
+
+
+/* DISPLAY ALL AVAILABLE FLIGHTS */
+
+function getCurrentFlights(allFlights){
+
+  const flights =
+    Array.isArray(allFlights)
+      ? allFlights
+      : [];
+
+  return flights.slice(0,MAX_ROWS);
+
+}
+
 
 /* JAMAICA CLOCK */
+
 function updateClock(){
- const now = new Date();
 
- document.getElementById("clock").textContent =
- new Intl.DateTimeFormat(
-   "en-US",
-   {
-     timeZone:"America/Jamaica",
-     hour:"numeric",
-     minute:"2-digit",
-     second:"2-digit",
-     hour12:true
-   }
- ).format(now);
+  const now =
+    new Date();
 
- document.getElementById("date").textContent =
- new Intl.DateTimeFormat(
-   "en-US",
-   {
-     timeZone:"America/Jamaica",
-     weekday:"short",
-     month:"short",
-     day:"numeric",
-     year:"numeric"
-   }
- ).format(now);
+
+  document.getElementById("clock").textContent =
+
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone:"America/Jamaica",
+        hour:"numeric",
+        minute:"2-digit",
+        second:"2-digit",
+        hour12:true
+      }
+    ).format(now);
+
+
+  document.getElementById("date").textContent =
+
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone:"America/Jamaica",
+        weekday:"short",
+        month:"short",
+        day:"numeric",
+        year:"numeric"
+      }
+    ).format(now);
+
 }
+
 
 updateClock();
-setInterval(updateClock,1000);
 
-/* CURRENT JAMAICA TIME */
-function jamaicaMinutesNow(){
- const parts = new Intl.DateTimeFormat(
-   "en-US",
-   {
-     timeZone:"America/Jamaica",
-     hour:"numeric",
-     minute:"2-digit",
-     hour12:false
-   }
- ).formatToParts(new Date());
+setInterval(
+  updateClock,
+  1000
+);
 
- const hour = Number(parts.find(p=>p.type==="hour")?.value || 0);
- const minute = Number(parts.find(p=>p.type==="minute")?.value || 0);
- return (hour % 24) * 60 + minute;
-}
-
-/* FLIGHT TIME TO MINUTES */
-function flightTimeMinutes(timeString){
- if(!timeString) return null;
- const match = String(timeString).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
- if(!match) return null;
-
- let hour = Number(match[1]);
- const minute = Number(match[2]);
- const ampm = match[3].toUpperCase();
-
- if(hour === 12) hour = 0;
- if(ampm === "PM") hour += 12;
-
- return hour * 60 + minute;
-}
-
-/* MOVING 20-FLIGHT WINDOW */
-function getCurrentFlights(allFlights){
- const flights = Array.isArray(allFlights) ? allFlights : [];
- if(flights.length <= MAX_ROWS) return flights;
-
- const now = jamaicaMinutesNow();
- let nextIndex = flights.findIndex(f=>{
-   const mins = flightTimeMinutes(f.scheduledTime);
-   return (mins !== null && mins >= now);
- });
-
- if(nextIndex === -1){
-   return flights.slice(-MAX_ROWS);
- }
-
- let start = Math.max(0, nextIndex - KEEP_PREVIOUS);
- if(start + MAX_ROWS > flights.length){
-   start = Math.max(0, flights.length - MAX_ROWS);
- }
-
- return flights.slice(start, start + MAX_ROWS);
-}
 
 /* STATUS COLOUR */
+
 function statusClass(status){
- const s = String(status || "").toLowerCase();
- if(s.includes("cancel")) return "cancelled";
- if(s.includes("delay")) return "delayed";
- if(s.includes("on-time") || s.includes("on time") || s.includes("landed") || s.includes("departed")) return "onTime";
- return "";
+
+  const s =
+    String(status || "").toLowerCase();
+
+
+  if(s.includes("cancel")){
+    return "cancelled";
+  }
+
+
+  if(s.includes("delay")){
+    return "delayed";
+  }
+
+
+  if(
+    s.includes("on-time") ||
+    s.includes("on time") ||
+    s.includes("landed") ||
+    s.includes("departed") ||
+    s.includes("scheduled")
+  ){
+    return "onTime";
+  }
+
+
+  return "";
+
 }
+
 
 /* ARRIVALS */
-function renderArrivals(allFlights){
- const body = document.getElementById("arrivalBody");
- const flights = getCurrentFlights(allFlights || []);
 
- body.innerHTML = flights.map(f=>`
- <div class="flightRow arrivalRow">
-   <div class="airlineCell">
-     ${airlineDisplay(f.airlineFlight)}
-   </div>
-   <div>
-     ${escapeHTML(f.from || "—")}
-   </div>
-   <div class="number">
-     ${escapeHTML(f.baggage || "—")}
-   </div>
-   <div class="time">
-     ${escapeHTML(f.scheduledTime || "—")}
-   </div>
-   <div class="actual ${statusClass(f.actualTime || f.status)}">
-     ${escapeHTML(f.actualTime || f.status || "—")}
-   </div>
- </div>
- `).join("");
+function renderArrivals(allFlights){
+
+  const body =
+    document.getElementById("arrivalBody");
+
+
+  const flights =
+    getCurrentFlights(
+      allFlights || []
+    );
+
+
+  if(!flights.length){
+
+    body.innerHTML =
+      '<div class="message">No KIN arrivals currently available.</div>';
+
+    return;
+
+  }
+
+
+  body.innerHTML = flights.map(f=>{
+
+    const code =
+      f.airlineCode || "";
+
+
+    const flightNumber =
+      f.flight ||
+      (
+        code +
+        (
+          f.flightNumber ||
+          ""
+        )
+      );
+
+
+    const airlineFlight =
+      f.airline
+        ? `${f.airline} ${flightNumber}`
+        : flightNumber;
+
+
+    const actualDisplay =
+
+      f.actualTime
+        ? f.actualTime
+
+        : (
+            f.estimatedTime
+              ? f.estimatedTime
+              : (
+                  f.status ||
+                  "—"
+                )
+          );
+
+
+    return `
+
+    <div class="flightRow arrivalRow">
+
+      <div class="airlineCell">
+        ${airlineDisplay(airlineFlight)}
+      </div>
+
+      <div>
+        ${escapeHTML(
+          f.city ||
+          f.airportCode ||
+          "—"
+        )}
+      </div>
+
+      <div class="number">
+        ${escapeHTML(
+          f.baggage ||
+          "—"
+        )}
+      </div>
+
+      <div class="time">
+        ${escapeHTML(
+          f.scheduledTime ||
+          "—"
+        )}
+      </div>
+
+      <div class="actual ${statusClass(
+        f.status ||
+        actualDisplay
+      )}">
+        ${escapeHTML(
+          actualDisplay
+        )}
+      </div>
+
+    </div>
+
+    `;
+
+  }).join("");
+
 }
+
 
 /* DEPARTURES */
+
 function renderDepartures(allFlights){
- const body = document.getElementById("departureBody");
- const flights = getCurrentFlights(allFlights || []);
 
- body.innerHTML = flights.map(f=>{
-   const displayStatus = f.actualTime
-     ? `${f.actualTime}${f.status ? " • " + f.status : ""}`
-     : (f.status || "—");
+  const body =
+    document.getElementById("departureBody");
 
-   return `
-   <div class="flightRow departureRow">
-     <div class="airlineCell">
-       ${airlineDisplay(f.airlineFlight)}
-     </div>
-     <div>
-       ${escapeHTML(f.to || "—")}
-     </div>
-     <div class="number">
-       ${escapeHTML(f.checkInCounters || "—")}
-     </div>
-     <div class="number">
-       ${escapeHTML(f.gate || "—")}
-     </div>
-     <div class="time">
-       ${escapeHTML(f.scheduledTime || "—")}
-     </div>
-     <div class="status ${statusClass(f.status)}">
-       ${escapeHTML(displayStatus)}
-     </div>
-   </div>
-   `;
- }).join("");
+
+  const flights =
+    getCurrentFlights(
+      allFlights || []
+    );
+
+
+  if(!flights.length){
+
+    body.innerHTML =
+      '<div class="message">No KIN departures currently available.</div>';
+
+    return;
+
+  }
+
+
+  body.innerHTML = flights.map(f=>{
+
+    const code =
+      f.airlineCode || "";
+
+
+    const flightNumber =
+      f.flight ||
+      (
+        code +
+        (
+          f.flightNumber ||
+          ""
+        )
+      );
+
+
+    const airlineFlight =
+      f.airline
+        ? `${f.airline} ${flightNumber}`
+        : flightNumber;
+
+
+    const displayStatus =
+
+      f.actualTime
+
+        ? (
+            `${f.actualTime}` +
+            (
+              f.status
+                ? ` • ${f.status}`
+                : ""
+            )
+          )
+
+        : (
+
+            f.estimatedTime
+
+              ? (
+                  `${f.estimatedTime}` +
+                  (
+                    f.status
+                      ? ` • ${f.status}`
+                      : ""
+                  )
+                )
+
+              : (
+                  f.status ||
+                  "—"
+                )
+          );
+
+
+    return `
+
+    <div class="flightRow departureRow">
+
+      <div class="airlineCell">
+        ${airlineDisplay(airlineFlight)}
+      </div>
+
+      <div>
+        ${escapeHTML(
+          f.city ||
+          f.airportCode ||
+          "—"
+        )}
+      </div>
+
+      <div class="number">
+        ${escapeHTML(
+          f.checkIn ||
+          f.checkInCounters ||
+          "—"
+        )}
+      </div>
+
+      <div class="number">
+        ${escapeHTML(
+          f.gate ||
+          "—"
+        )}
+      </div>
+
+      <div class="time">
+        ${escapeHTML(
+          f.scheduledTime ||
+          "—"
+        )}
+      </div>
+
+      <div class="status ${statusClass(
+        f.status
+      )}">
+        ${escapeHTML(
+          displayStatus
+        )}
+      </div>
+
+    </div>
+
+    `;
+
+  }).join("");
+
 }
 
-/* LOAD REAL KIN DATA WITH RESILIENT FALLBACK */
+
+/* LOAD LIVE KIN DATA */
+
 async function loadBoards(){
- const stamp = Date.now();
- let arrivalsData = null;
- let departuresData = null;
 
- const arrivalCandidates = [
-   `kin-arrivals.json?t=${stamp}`,
-   `../airports/data/kin-arrivals.json?t=${stamp}`,
-   `data/kin-arrivals.json?t=${stamp}`
- ];
+  const stamp =
+    Date.now();
 
- for(const url of arrivalCandidates){
-   try {
-     const res = await fetch(url, {cache:"no-store"});
-     if(res.ok) {
-       arrivalsData = await res.json();
-       break;
-     }
-   } catch(e) {}
- }
 
- const departureCandidates = [
-   `kin-departures.json?t=${stamp}`,
-   `../airports/data/kin-departures.json?t=${stamp}`,
-   `data/kin-departures.json?t=${stamp}`
- ];
+  try{
 
- for(const url of departureCandidates){
-   try {
-     const res = await fetch(url, {cache:"no-store"});
-     if(res.ok) {
-       departuresData = await res.json();
-       break;
-     }
-   } catch(e) {}
- }
+    const [
 
- const arrivalsList = (arrivalsData && arrivalsData.flights && arrivalsData.flights.length > 0)
-   ? arrivalsData.flights
-   : DEFAULT_KIN_ARRIVALS;
+      arrivalResponse,
 
- const departuresList = (departuresData && departuresData.flights && departuresData.flights.length > 0)
-   ? departuresData.flights
-   : DEFAULT_KIN_DEPARTURES;
+      departureResponse
 
- renderArrivals(arrivalsList);
- renderDepartures(departuresList);
+    ] = await Promise.all([
 
- const updated = (arrivalsData && arrivalsData.updated) ||
-                 (departuresData && departuresData.updated) ||
-                 new Date().toISOString();
+      fetch(
+        ARRIVALS_URL +
+        "?t=" +
+        stamp,
+        {
+          cache:"no-store"
+        }
+      ),
 
- document.getElementById("updated").textContent =
-   "DATA UPDATED " +
-   new Intl.DateTimeFormat(
-     "en-US",
-     {
-       timeZone:"America/Jamaica",
-       hour:"numeric",
-       minute:"2-digit",
-       hour12:true
-     }
-   ).format(new Date(updated));
+      fetch(
+        DEPARTURES_URL +
+        "?t=" +
+        stamp,
+        {
+          cache:"no-store"
+        }
+      )
+
+    ]);
+
+
+    if(
+      !arrivalResponse.ok ||
+      !departureResponse.ok
+    ){
+
+      throw new Error(
+        `KIN data HTTP error: arrivals=${arrivalResponse.status}, departures=${departureResponse.status}`
+      );
+
+    }
+
+
+    const arrivalsData =
+      await arrivalResponse.json();
+
+
+    const departuresData =
+      await departureResponse.json();
+
+
+    const arrivalsList =
+
+      Array.isArray(
+        arrivalsData.flights
+      )
+
+        ? arrivalsData.flights
+
+        : [];
+
+
+    const departuresList =
+
+      Array.isArray(
+        departuresData.flights
+      )
+
+        ? departuresData.flights
+
+        : [];
+
+
+    renderArrivals(
+      arrivalsList
+    );
+
+
+    renderDepartures(
+      departuresList
+    );
+
+
+    const updated =
+
+      arrivalsData.updated ||
+      departuresData.updated ||
+      new Date().toISOString();
+
+
+    document.getElementById(
+      "updated"
+    ).textContent =
+
+      "LIVE KIN DATA • UPDATED " +
+
+      new Intl.DateTimeFormat(
+
+        "en-US",
+
+        {
+          timeZone:"America/Jamaica",
+          hour:"numeric",
+          minute:"2-digit",
+          hour12:true
+        }
+
+      ).format(
+        new Date(updated)
+      ) +
+
+      " JAMAICA TIME";
+
+
+  }
+
+  catch(error){
+
+    console.error(
+      "KIN live data error:",
+      error
+    );
+
+
+    document.getElementById(
+      "arrivalBody"
+    ).innerHTML =
+
+      '<div class="message">KIN arrival data temporarily unavailable.</div>';
+
+
+    document.getElementById(
+      "departureBody"
+    ).innerHTML =
+
+      '<div class="message">KIN departure data temporarily unavailable.</div>';
+
+
+    document.getElementById(
+      "updated"
+    ).textContent =
+
+      "KIN LIVE DATA TEMPORARILY UNAVAILABLE";
+
+  }
+
 }
+
+
+/* INITIAL LOAD */
 
 loadBoards();
 
-/* Check fresh KIN JSON and move board every 5 minutes */
-setInterval(loadBoards, 300000);
+
+/*
+ * Refresh the live KIN data every 5 minutes.
+ */
+setInterval(
+  loadBoards,
+  300000
+);
+
 
 /* KIOSK PROTECTION */
-document.addEventListener("contextmenu", e=>e.preventDefault());
-document.addEventListener("selectstart", e=>e.preventDefault());
-document.addEventListener("dragstart", e=>e.preventDefault());
+
+document.addEventListener(
+  "contextmenu",
+  e=>e.preventDefault()
+);
+
+document.addEventListener(
+  "selectstart",
+  e=>e.preventDefault()
+);
+
+document.addEventListener(
+  "dragstart",
+  e=>e.preventDefault()
+);
 
 </script>
 
